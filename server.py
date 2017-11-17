@@ -16,7 +16,8 @@ _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 class MyDatastoreServicer(datastore_pb2.DatastoreServicer):
     def __init__(self):
-        self.db = rocksdb.DB("lab1.db", rocksdb.Options(create_if_missing=True))
+        self.db = rocksdb.DB("lab2.db", rocksdb.Options(create_if_missing=True))
+        self.dbLog = rocksdb.DB("lab2Log.db", rocksdb.Options(create_if_missing=True))
 
     def put(self, request, context):
         print("put")
@@ -25,9 +26,8 @@ class MyDatastoreServicer(datastore_pb2.DatastoreServicer):
         testString = request.data 
         testString = testString.encode("utf-8")
         self.db.put(key, testString)
+        self.dbLog.put()
         print(request)
-        # TODO - save key and value into DB converting request.data string to utf-8 bytes 
-        #db.put(b"key", b"value")
         
         return datastore_pb2.Response(data=key)
 
@@ -35,9 +35,13 @@ class MyDatastoreServicer(datastore_pb2.DatastoreServicer):
         print("get")
         print(request)
         value =  self.db.get(request.data.encode("utf-8"))
-        # TODO - retrieve the value from DB by the given key. Needs to convert request.data string to utf-8 bytes. 
-       # value = None
 
+        return datastore_pb2.Request(data=value)
+
+    def delete(self, request, context):
+        print("delete")
+        self.db.delete(request.data)
+       
         return datastore_pb2.Response(data=value)
 
 def run(host, port):
