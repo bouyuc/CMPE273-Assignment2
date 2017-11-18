@@ -11,4 +11,5 @@ message Response {
 service Datastore {
    rpc put(Request) returns (Response) {}
    rpc get(Request) returns (Response) {}
+   rpc delete(Request) returns (Response) {}
 }

@@ -6,6 +6,7 @@
 import grpc
 import datastore_pb2
 import argparse
+import readline
 
 PORT = 3000
 
@@ -21,6 +22,9 @@ class DatastoreClient():
     def get(self, key):
         return self.stub.get(datastore_pb2.Request(data=key))
 
+    def delete(self, key):
+        return self.stub.delete(datastore_pb2.Request(data=key))
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("host", help="display a square of a given number")
@@ -28,15 +32,22 @@ def main():
     print("Client is connecting to Server at {}:{}...".format(args.host, PORT))
     client = DatastoreClient(host=args.host)
     
-    value = 'foo'
-    print("## PUT Request: value = " + value) 
-    resp = client.put(value)
-    key = resp.data
-    print("## PUT Response: key = " + key)
+    try:
+        while True:
+            text = input("Insert: ")
+            print("Inserting: " + text)
+            resp = client.put(text) #resp is server response
+    except KeyboardInterrupt:
+            print("exiting")
 
-    print("## GET Request: key = " + key) 
-    resp = client.get(key)
-    print("## GET Response: value = " + resp.data) 
+    key = resp.data
+    #print("## PUT Response: key = " + key)
+
+    ##print("## GET Request: key = " + key) 
+    ##resp = client.get(key)
+    #print("## GET Response: value = " + resp.data) 
+    #resp = client.delete("4")
+    #print(resp.data + "Deleted")
 
 
 if __name__ == "__main__":

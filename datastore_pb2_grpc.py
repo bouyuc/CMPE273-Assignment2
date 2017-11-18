@@ -24,6 +24,11 @@ class DatastoreStub(object):
         request_serializer=datastore__pb2.Request.SerializeToString,
         response_deserializer=datastore__pb2.Response.FromString,
         )
+    self.delete = channel.unary_unary(
+        '/Datastore/delete',
+        request_serializer=datastore__pb2.Request.SerializeToString,
+        response_deserializer=datastore__pb2.Response.FromString,
+        )
 
 
 class DatastoreServicer(object):
@@ -44,6 +49,13 @@ class DatastoreServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
+  def delete(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
 
 def add_DatastoreServicer_to_server(servicer, server):
   rpc_method_handlers = {
@@ -54,6 +66,11 @@ def add_DatastoreServicer_to_server(servicer, server):
       ),
       'get': grpc.unary_unary_rpc_method_handler(
           servicer.get,
+          request_deserializer=datastore__pb2.Request.FromString,
+          response_serializer=datastore__pb2.Response.SerializeToString,
+      ),
+      'delete': grpc.unary_unary_rpc_method_handler(
+          servicer.delete,
           request_deserializer=datastore__pb2.Request.FromString,
           response_serializer=datastore__pb2.Response.SerializeToString,
       ),

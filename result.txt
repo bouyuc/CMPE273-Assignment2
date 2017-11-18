@@ -1,5 +1,0 @@
-Client is connecting to Server at 192.168.0.1:3000...
-## PUT Request: value = foo
-## PUT Response: key = b0817e632bde4ba09b25c7155443d1da
-## GET Request: key = b0817e632bde4ba09b25c7155443d1da
-## GET Response: value = foo

@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='datastore.proto',
   package='',
   syntax='proto3',
-  serialized_pb=_b('\n\x0f\x64\x61tastore.proto\"\x17\n\x07Request\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\t\"\x18\n\x08Response\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\t2G\n\tDatastore\x12\x1c\n\x03put\x12\x08.Request\x1a\t.Response\"\x00\x12\x1c\n\x03get\x12\x08.Request\x1a\t.Response\"\x00\x62\x06proto3')
+  serialized_pb=_b('\n\x0f\x64\x61tastore.proto\"\x17\n\x07Request\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\t\"\x18\n\x08Response\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\t2h\n\tDatastore\x12\x1c\n\x03put\x12\x08.Request\x1a\t.Response\"\x00\x12\x1c\n\x03get\x12\x08.Request\x1a\t.Response\"\x00\x12\x1f\n\x06\x64\x65lete\x12\x08.Request\x1a\t.Response\"\x00\x62\x06proto3')
 )
 
 
@@ -135,6 +135,11 @@ try:
           request_serializer=Request.SerializeToString,
           response_deserializer=Response.FromString,
           )
+      self.delete = channel.unary_unary(
+          '/Datastore/delete',
+          request_serializer=Request.SerializeToString,
+          response_deserializer=Response.FromString,
+          )
 
 
   class DatastoreServicer(object):
@@ -155,6 +160,13 @@ try:
       context.set_details('Method not implemented!')
       raise NotImplementedError('Method not implemented!')
 
+    def delete(self, request, context):
+      # missing associated documentation comment in .proto file
+      pass
+      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+      context.set_details('Method not implemented!')
+      raise NotImplementedError('Method not implemented!')
+
 
   def add_DatastoreServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -165,6 +177,11 @@ try:
         ),
         'get': grpc.unary_unary_rpc_method_handler(
             servicer.get,
+            request_deserializer=Request.FromString,
+            response_serializer=Response.SerializeToString,
+        ),
+        'delete': grpc.unary_unary_rpc_method_handler(
+            servicer.delete,
             request_deserializer=Request.FromString,
             response_serializer=Response.SerializeToString,
         ),
@@ -190,6 +207,10 @@ try:
       # missing associated documentation comment in .proto file
       pass
       context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
+    def delete(self, request, context):
+      # missing associated documentation comment in .proto file
+      pass
+      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
 
 
   class BetaDatastoreStub(object):
@@ -210,6 +231,11 @@ try:
       pass
       raise NotImplementedError()
     get.future = None
+    def delete(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
+      # missing associated documentation comment in .proto file
+      pass
+      raise NotImplementedError()
+    delete.future = None
 
 
   def beta_create_Datastore_server(servicer, pool=None, pool_size=None, default_timeout=None, maximum_timeout=None):
@@ -219,14 +245,17 @@ try:
     file not marked beta) for all further purposes. This function was
     generated only to ease transition from grpcio<0.15.0 to grpcio>=0.15.0"""
     request_deserializers = {
+      ('Datastore', 'delete'): Request.FromString,
       ('Datastore', 'get'): Request.FromString,
       ('Datastore', 'put'): Request.FromString,
     }
     response_serializers = {
+      ('Datastore', 'delete'): Response.SerializeToString,
       ('Datastore', 'get'): Response.SerializeToString,
       ('Datastore', 'put'): Response.SerializeToString,
     }
     method_implementations = {
+      ('Datastore', 'delete'): face_utilities.unary_unary_inline(servicer.delete),
       ('Datastore', 'get'): face_utilities.unary_unary_inline(servicer.get),
       ('Datastore', 'put'): face_utilities.unary_unary_inline(servicer.put),
     }
@@ -241,14 +270,17 @@ try:
     file not marked beta) for all further purposes. This function was
     generated only to ease transition from grpcio<0.15.0 to grpcio>=0.15.0"""
     request_serializers = {
+      ('Datastore', 'delete'): Request.SerializeToString,
       ('Datastore', 'get'): Request.SerializeToString,
       ('Datastore', 'put'): Request.SerializeToString,
     }
     response_deserializers = {
+      ('Datastore', 'delete'): Response.FromString,
       ('Datastore', 'get'): Response.FromString,
       ('Datastore', 'put'): Response.FromString,
     }
     cardinalities = {
+      'delete': cardinality.Cardinality.UNARY_UNARY,
       'get': cardinality.Cardinality.UNARY_UNARY,
       'put': cardinality.Cardinality.UNARY_UNARY,
     }
