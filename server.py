@@ -1,14 +1,18 @@
 '''
 ################################## server.py #############################
-# Lab1 gRPC RocksDB Server 
+# Lab1 gRPC RocksDB Server
 ################################## server.py #############################
 '''
+#getUpdateSince
+#
+
 import time
 import grpc
 import datastore_pb2
 import datastore_pb2_grpc
 import uuid
 import rocksdb
+import ast
 
 from concurrent import futures
 
@@ -18,17 +22,25 @@ class MyDatastoreServicer(datastore_pb2.DatastoreServicer):
     def __init__(self):
         self.db = rocksdb.DB("lab2.db", rocksdb.Options(create_if_missing=True))
         self.dbLog = rocksdb.DB("lab2Log.db", rocksdb.Options(create_if_missing=True))
+        it = db.iterkeys()
 
     def put(self, request, context):
         print("put")
+        it.seek_to_last()
+        latestSequenceNumber = int(list(it)[0].decode("utf-8"))
+
         key = uuid.uuid4().hex
         key = key.encode("utf-8")
-        testString = request.data 
+        testString = request.data
         testString = testString.encode("utf-8")
+        logKey = str(latestSequenceNumber+1).encode("utf-8")
+        logValue = str(["put", request.data]).encode("utf-8")
+
         self.db.put(key, testString)
-        self.dbLog.put()
+        self.dbLog.put(logKey, logValue)
         print(request)
-        
+        print(int(list(it)[0].decode("utf-8")))
+
         return datastore_pb2.Response(data=key)
 
     def get(self, request, context):
@@ -41,7 +53,7 @@ class MyDatastoreServicer(datastore_pb2.DatastoreServicer):
     def delete(self, request, context):
         print("delete")
         self.db.delete(request.data)
-       
+
         return datastore_pb2.Response(data=value)
 
 def run(host, port):
