@@ -37,11 +37,13 @@ def main():
             text = input("Insert: ")
             print("Inserting: " + text)
             resp = client.put(text) #resp is server response
+            key = resp.data
+            print("## PUT Response: key = " + key)
     except KeyboardInterrupt:
             print("exiting")
 
-    key = resp.data
-    #print("## PUT Response: key = " + key)
+    
+
 
     ##print("## GET Request: key = " + key) 
     ##resp = client.get(key)

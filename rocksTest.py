@@ -18,6 +18,7 @@ def addData():
 
 def printAll():
     it.seek_to_first()
+    it.seek("1510981933.187634".encode("utf-8"))
     for i in list(it):
         print(i)
 
