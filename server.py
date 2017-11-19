@@ -18,6 +18,7 @@ from concurrent import futures
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 slaveWaiting = False
+slaveReplicationThreadPort = 1337
 
 class MyDatastoreServicer(datastore_pb2.DatastoreServicer):
     def __init__(self):
@@ -35,8 +36,12 @@ class MyDatastoreServicer(datastore_pb2.DatastoreServicer):
         global slaveWaiting
         def wrapper(self, request, context):
             print("decorator success")
-            return someFunction(self, request, context) 
+            return someFunction(self, request, context)
         return wrapper
+
+    def replicationQueue(logKey):
+        it = self.dbLog.iterkeys()
+        it.seek(logKey)
 
     @replicator
     def put(self, request, context):
@@ -76,8 +81,28 @@ class MyDatastoreServicer(datastore_pb2.DatastoreServicer):
 
         return datastore_pb2.Response(data=request.data)
 
+class slaveReplicationThread(threading.Thread):
+    def __init__(self, IP, Port):
+        threading.Thread.__init__(self)
+        self.IP = IP
+        self.Port = Port
 
-            
+    def run(host, port):
+        '''
+        Run the GRPC server
+        '''
+        server = grpc.server(futures.ThreadPoolExecutor(max_workers=1))
+        datastore_pb2_grpc.add_DatastoreServicer_to_server(MyDatastoreServicer(), server)
+        server.add_insecure_port('%s:%d' % ("localhost", slaveReplicationThreadPort))
+        server.start()
+
+        try:
+            while True:
+                print("Server started at...%d" % port)
+                time.sleep(_ONE_DAY_IN_SECONDS)
+        except KeyboardInterrupt:
+            server.stop(0)
+
 def run(host, port):
     '''
     Run the GRPC server
@@ -96,4 +121,6 @@ def run(host, port):
 
 
 if __name__ == '__main__':
+    slaveThread = slaveReplicationThread()
+    slaveThread.start()
     run('0.0.0.0', 3000)
