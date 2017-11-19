@@ -13,6 +13,7 @@ import datastore_pb2_grpc
 import uuid
 import rocksdb
 import ast
+import threading
 
 from concurrent import futures
 
@@ -22,6 +23,10 @@ slaveReplicationThreadPort = 1337
 
 class MyDatastoreServicer(datastore_pb2.DatastoreServicer):
     def __init__(self):
+        print("starting server")
+
+    def replicator(someFunction):
+        global slaveWaiting
         opts = rocksdb.Options()
         opts.create_if_missing = True
         opts.table_factory = rocksdb.BlockBasedTableFactory(
@@ -32,8 +37,7 @@ class MyDatastoreServicer(datastore_pb2.DatastoreServicer):
         self.db = rocksdb.DB("lab2.db", rocksdb.Options(create_if_missing=True))
         self.dbLog = rocksdb.DB("lab2Log.db", opts)
 
-    def replicator(someFunction):
-        global slaveWaiting
+
         def wrapper(self, request, context):
             print("decorator success")
             return someFunction(self, request, context)
@@ -86,8 +90,10 @@ class slaveReplicationThread(threading.Thread):
         threading.Thread.__init__(self)
         self.IP = IP
         self.Port = Port
+        print(self)
+        print(IP)
 
-    def run(host, port):
+    def run(IP):
         '''
         Run the GRPC server
         '''
@@ -98,7 +104,7 @@ class slaveReplicationThread(threading.Thread):
 
         try:
             while True:
-                print("Server started at...%d" % port)
+                print("Server started at...%d" % slaveReplicationThreadPort)
                 time.sleep(_ONE_DAY_IN_SECONDS)
         except KeyboardInterrupt:
             server.stop(0)
@@ -121,6 +127,6 @@ def run(host, port):
 
 
 if __name__ == '__main__':
-    slaveThread = slaveReplicationThread()
+    slaveThread = slaveReplicationThread("localhost", 1234)
     slaveThread.start()
     run('0.0.0.0', 3000)
