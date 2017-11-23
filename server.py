@@ -41,9 +41,8 @@ class MyDatastoreServicer(datastore_pb2.DatastoreServicer):
         return input.encode("utf-8")
 
     def replicator(someFunction):
-        global newInput
-
         def wrapper(self, request, context):
+            global newInput
             newInput = True
             logKey = str(time.time()).encode("utf-8")
             logValue1 = str(someFunction.__name__)
@@ -58,21 +57,24 @@ class MyDatastoreServicer(datastore_pb2.DatastoreServicer):
 
     def get(self, request, context): #Used to serve slave requests
         global newInput
-        it = self.dbLog.iteritems()
-        itV = self.dbLog.itervalues()
-        value=""
-        print("Get")
-        print(request.data)
-        if(request.data == "pa55w0rd"):
-            it.seek_to_first()
+        if (newInput == False):
+            value = ""
         else:
-            it.seek(request.data.encode("utf-8"))
-            it.__next__()
-        for i in list(it):
-            value = value + i[0].decode("utf-8") + "!" + i[1].decode("utf-8") + "!"
-        print(value)
+            it = self.dbLog.iteritems()
+            itV = self.dbLog.itervalues()
+            value=""
+            print("Get")
+            print(request.data)
+            if(request.data == "pa55w0rd"):
+                it.seek_to_first()
+            else:
+                it.seek(request.data.encode("utf-8"))
+                it.__next__()
+            for i in list(it):
+                value = value + i[0].decode("utf-8") + "!" + i[1].decode("utf-8") + "!"
+            print(value)
 
-        newInput = False
+            newInput = False
         return datastore_pb2.Request(data=value)
 
     @replicator
@@ -89,6 +91,7 @@ class MyDatastoreServicer(datastore_pb2.DatastoreServicer):
         self.db.put(key, testString)
         print(logKey)
         print(request)
+        print(newInput)
 
         return datastore_pb2.Response(data=key)
 
