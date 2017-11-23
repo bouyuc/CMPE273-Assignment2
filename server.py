@@ -18,34 +18,62 @@ import threading
 from concurrent import futures
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
-slaveWaiting = False
+newInput = False
 slaveReplicationThreadPort = 1337
+opts = rocksdb.Options()
+opts.create_if_missing = True
+opts.table_factory = rocksdb.BlockBasedTableFactory(
+    index_type="binary_search",
+    filter_policy=rocksdb.BloomFilterPolicy(0),
+    block_cache=rocksdb.LRUCache(2*(1024**3)),
+    block_cache_compressed=rocksdb.LRUCache(500*(1024**2)))
+db = rocksdb.DB("lab2.db", rocksdb.Options(create_if_missing=True))
+dbLog = rocksdb.DB("lab2Log.db", opts)
+
 
 class MyDatastoreServicer(datastore_pb2.DatastoreServicer):
     def __init__(self):
         print("starting server")
+        self.db = db
+        self.dbLog = dbLog
+
+    def encode(input):
+        return input.encode("utf-8")
 
     def replicator(someFunction):
-        global slaveWaiting
-        opts = rocksdb.Options()
-        opts.create_if_missing = True
-        opts.table_factory = rocksdb.BlockBasedTableFactory(
-            index_type="binary_search",
-            filter_policy=rocksdb.BloomFilterPolicy(0),
-            block_cache=rocksdb.LRUCache(2*(1024**3)),
-            block_cache_compressed=rocksdb.LRUCache(500*(1024**2)))
-        self.db = rocksdb.DB("lab2.db", rocksdb.Options(create_if_missing=True))
-        self.dbLog = rocksdb.DB("lab2Log.db", opts)
-
+        global newInput
 
         def wrapper(self, request, context):
-            print("decorator success")
+            newInput = True
+            logKey = str(time.time()).encode("utf-8")
+            logValue1 = str(someFunction.__name__)
+            logValue2 = str(request.data)
+            logValue = (logValue1 + "," + logValue2).encode("utf-8")
+
+            dbLog.put(logKey, logValue)
+
             return someFunction(self, request, context)
+
         return wrapper
 
-    def replicationQueue(logKey):
-        it = self.dbLog.iterkeys()
-        it.seek(logKey)
+    def get(self, request, context): #Used to serve slave requests
+        global newInput
+        it = self.dbLog.iteritems()
+        itV = self.dbLog.itervalues()
+        value=""
+        print("Get")
+        print(request.data)
+        if(request.data == "pa55w0rd"):
+            it.seek_to_first()
+        else:
+            it.seek(request.data.encode("utf-8"))
+            it.__next__()
+        for i in list(it):
+            value = value + i[0].decode("utf-8") + "!" + i[1].decode("utf-8") + "!"
+        print(value)
+
+        newInput = False
+        return datastore_pb2.Request(data=value)
 
     @replicator
     def put(self, request, context):
@@ -59,27 +87,16 @@ class MyDatastoreServicer(datastore_pb2.DatastoreServicer):
         logKey = str(time.time()).encode("utf-8")
         logValue = str(["put", request.data]).encode("utf-8")
         self.db.put(key, testString)
-        self.dbLog.put(logKey, logValue)
         print(logKey)
         print(request)
 
         return datastore_pb2.Response(data=key)
 
-    def get(self, request, context):
-        it = self.dbLog.itervalues()
-        it.seek_to_first()
-        for i in list(it):
-            print(i.decode("utf-8"))
-        print("get")
-        print(request)
-        value =  self.db.get(request.data.encode("utf-8"))
-
-        return datastore_pb2.Request(data=value)
-
+    @replicator
     def delete(self, request, context):
-        logKey = str(time.time()).encode("utf-8")
-        logValue = str(["delete", request.data]).encode("utf-8")
-        self.dbLog.put(logKey, logValue)
+        # logKey = str(time.time()).encode("utf-8")
+        # logValue = str(["delete", request.data]).encode("utf-8")
+        # self.dbLog.put(logKey, logValue)
         print("deleting " + str(request.data))
         self.db.delete(request.data.encode("utf-8"))
 
@@ -90,18 +107,15 @@ class slaveReplicationThread(threading.Thread):
         threading.Thread.__init__(self)
         self.IP = IP
         self.Port = Port
-        print(self)
-        print(IP)
 
     def run(IP):
         '''
         Run the GRPC server
         '''
-        server = grpc.server(futures.ThreadPoolExecutor(max_workers=1))
+        server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
         datastore_pb2_grpc.add_DatastoreServicer_to_server(MyDatastoreServicer(), server)
         server.add_insecure_port('%s:%d' % ("localhost", slaveReplicationThreadPort))
         server.start()
-
         try:
             while True:
                 print("Server started at...%d" % slaveReplicationThreadPort)
@@ -113,7 +127,7 @@ def run(host, port):
     '''
     Run the GRPC server
     '''
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=1))
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     datastore_pb2_grpc.add_DatastoreServicer_to_server(MyDatastoreServicer(), server)
     server.add_insecure_port('%s:%d' % (host, port))
     server.start()
@@ -127,6 +141,6 @@ def run(host, port):
 
 
 if __name__ == '__main__':
-    slaveThread = slaveReplicationThread("localhost", 1234)
+    slaveThread = slaveReplicationThread("localhost", slaveReplicationThreadPort)
     slaveThread.start()
     run('0.0.0.0', 3000)

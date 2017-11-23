@@ -1,6 +1,6 @@
 '''
 ################################## client.py #############################
-# 
+#
 ################################## client.py #############################
 '''
 import grpc
@@ -11,7 +11,7 @@ import readline
 PORT = 3000
 
 class DatastoreClient():
-    
+
     def __init__(self, host='0.0.0.0', port=PORT):
         self.channel = grpc.insecure_channel('%s:%d' % (host, port))
         self.stub = datastore_pb2.DatastoreStub(self.channel)
@@ -31,27 +31,22 @@ def main():
     args = parser.parse_args()
     print("Client is connecting to Server at {}:{}...".format(args.host, PORT))
     client = DatastoreClient(host=args.host)
-    
+
     try:
         while True:
             text = input("Insert: ")
             print("Inserting: " + text)
             resp = client.put(text) #resp is server response
             key = resp.data
-            print("## PUT Response: key = " + key)
+            print("Server responded with: " + key)
+
+            text = input("Delete: ")
+            print("Deletng: " + text)
+            resp = client.delete(text) #resp is server response
+            key = resp.data
+            print("Server responded with: " + key)
     except KeyboardInterrupt:
             print("exiting")
 
-    
-
-
-    ##print("## GET Request: key = " + key) 
-    ##resp = client.get(key)
-    #print("## GET Response: value = " + resp.data) 
-    #resp = client.delete("4")
-    #print(resp.data + "Deleted")
-
-
 if __name__ == "__main__":
     main()
-
