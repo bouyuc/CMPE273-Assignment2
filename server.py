@@ -52,7 +52,6 @@ class MyDatastoreServicer(datastore_pb2.DatastoreServicer):
             dbLog.put(logKey, logValue)
 
             return someFunction(self, request, context)
-
         return wrapper
 
     def get(self, request, context): #Used to serve slave requests
@@ -60,17 +59,33 @@ class MyDatastoreServicer(datastore_pb2.DatastoreServicer):
         if (newInput == False):
             value = ""
         else:
-            it = self.dbLog.iteritems()
-            itV = self.dbLog.itervalues()
+            # it = self.dbLog.iteritems()
+            # itV = self.dbLog.itervalues()
+            it = self.db.iteritems()
+            itLog = self.dbLog.iteritems()
             value=""
             print("Get")
             print(request.data)
             if(request.data == "pa55w0rd"):
                 it.seek_to_first()
+                itLog.seek_to_first()
             else:
-                it.seek(request.data.encode("utf-8"))
-                it.__next__()
-            for i in list(it):
+                itLog.seek(request.data.encode("utf-8"))
+                itLog.__next__()
+
+            #someString = str([["24099be15c1a4ca09c2159c61a2973a6","this"], ["24099be15c1a4ca09c2159c61a2973a6",["put", "str" ]]])
+
+            # value = []
+            # dataSet = []
+            # dataSetLog = []
+            # it.seek_to_first()
+            # for i in list(it):
+            #     dataSet.append(i[0].decode("utf-8"))
+            #     dataSet.append(i[1].decode("utf-8"))
+            # print("testing")
+            # print (dataSet)
+            # print("testing")
+            for i in list(itLog):
                 value = value + i[0].decode("utf-8") + "!" + i[1].decode("utf-8") + "!"
             print(value)
 
@@ -82,16 +97,14 @@ class MyDatastoreServicer(datastore_pb2.DatastoreServicer):
         print("put")
         it = self.dbLog.iterkeys()
         it.seek_to_last()
-        key = uuid.uuid4().hex
-        key = key.encode("utf-8")
+        key = str(time.time()).encode("utf-8")
         testString = request.data
         testString = testString.encode("utf-8")
         logKey = str(time.time()).encode("utf-8")
         logValue = str(["put", request.data]).encode("utf-8")
         self.db.put(key, testString)
-        print(logKey)
-        print(request)
-        print(newInput)
+        print("put key = " + str(key))
+        print("put logKey = " + str(logKey))
 
         return datastore_pb2.Response(data=key)
 
